@@ -4,6 +4,7 @@ import { generateDirectoryStructure } from '@/utils/fileSystem';
 import type { DirectoryNode } from '@/utils/fileSystem';
 import sampleData from '@/utils/sampleDirectory.json';
 import { ChatBot } from '@/components/pages/ChatBot';
+
 const data: DirectoryNode = sampleData;
 
 const MRMBot = () => {
@@ -12,6 +13,7 @@ const MRMBot = () => {
     const [directoryData, setDirectoryData] = useState(data);
     const [selectedPath, setSelectedPath] = useState('');
     const [sources, setSources] = useState<{ digit: string; path: string }[]>([]);
+    const [selectedFileHandle, setSelectedFileHandle] = useState<FileSystemFileHandle | null>(null);
 
     const handleFolderSelect = async () => {
       try {
@@ -49,26 +51,16 @@ const MRMBot = () => {
 
   return (
     <div className="flex h-screen w-screen">
-    {true ? (
         <DirectoryStructurePane 
           data={directoryData} 
           width={paneWidth}
           onResize={setPaneWidth}
           onSelectFolder={handleFolderSelect}
           sources={sources}
+          selectedFileHandle={selectedFileHandle}
+          onFileSelect={setSelectedFileHandle}
         />
-      ) : (
-        <div className="flex items-center justify-center w-full">
-          <button
-            onClick={handleFolderSelect}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            Select Folder
-          </button>
-        </div>
-      )}
-
-    {/* Right panel ChatBot - we are passing a function as a prop to the chatbot. Done because we want to update a state in the parent component owing to a condition in the child component.*/}
+      {/* Right panel ChatBot - we are passing a function as a prop to the chatbot. Done because we want to update a state in the parent component owing to a condition in the child component.*/}
       <ChatBot onMessageSelect={handleMessageSelect}/> 
     </div>
   );

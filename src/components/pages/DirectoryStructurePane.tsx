@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Folder, FileText, List, ChevronDown, ChevronRight, Search, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
+import { Folder, FileText, List, ChevronDown, ChevronRight, Search, ChevronLeftIcon, ChevronRightIcon, ArrowLeft } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { FilePreview } from '@/utils/FilePreview';
 
 interface Source {
   digit: string;
@@ -15,6 +16,8 @@ interface DirectoryStructurePaneProps {
   onResize: (width: number) => void;
   onSelectFolder: () => void;
   sources: Source[];
+  selectedFileHandle?: FileSystemFileHandle | null;
+  onFileSelect: (fileHandle: FileSystemFileHandle | null) => void;
 }
 
 export const DirectoryStructurePane: React.FC<DirectoryStructurePaneProps> = ({ 
@@ -22,7 +25,9 @@ export const DirectoryStructurePane: React.FC<DirectoryStructurePaneProps> = ({
   width,
   onResize,
   onSelectFolder,
-  sources
+  sources,
+  selectedFileHandle,
+  onFileSelect,
 }) => {
   const [selectedPath, setSelectedPath] = useState('/');
   const [isOpen, setIsOpen] = useState(false);
@@ -82,13 +87,30 @@ export const DirectoryStructurePane: React.FC<DirectoryStructurePaneProps> = ({
 
     const isSource = sources.find(source => source.path === node.path);
 
+    const handleNodeClick = async (node) => {
+      setSelectedPath(node.path);
+      
+      // Only attempt to get file handle if it's a file (not a folder)
+      if (node.type !== 'folder' && node.type !== 'root') {
+        try {
+          // The handle is already stored in the node
+          onFileSelect(node.handle as FileSystemFileHandle);
+        } catch (error) {
+          console.error('Error accessing file handle:', error);
+          onFileSelect(null);
+        }
+      } else {
+        onFileSelect(null);
+      }
+    };
+
     return (
       <div>
         <div
           className={`flex items-center gap-2 p-2 hover:bg-gray-100 rounded cursor-pointer ${
             selectedPath === node.path ? 'bg-gray-100' : ''
           }`}
-          onClick={() => setSelectedPath(node.path)}
+          onClick={() => handleNodeClick(node)}
           style={{ paddingLeft: `${indentation}px` }}
         >
           {node.children?.length > 0 && (
@@ -123,7 +145,9 @@ export const DirectoryStructurePane: React.FC<DirectoryStructurePaneProps> = ({
       <div className="flex items-center justify-between mb-4">
         {isExpanded && (
           <>
-            <h2 className="text-xl font-bold">Directory Structure</h2>
+            <h2 className="text-xl font-bold">
+              {selectedPath === '/' ? 'Directory Structure' : 'File Preview'}
+            </h2>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="flex items-center gap-2">
@@ -160,30 +184,56 @@ export const DirectoryStructurePane: React.FC<DirectoryStructurePaneProps> = ({
 
       {isExpanded && (
         <>
-          <div className="flex gap-4 mb-4">
-            <div className="flex items-center gap-2">
-              <FileText className="text-green-500" size={16} />
-              <span className="text-sm">Excel</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Folder className="text-blue-500" size={16} />
-              <span className="text-sm">Folder</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <List className="text-indigo-500" size={16} />
-              <span className="text-sm">List</span>
-            </div>
-          </div>
+          {selectedPath === '/' ? (
+            // Show directory structure when at root
+            <>
+              {/* Legend for file types */}
+              <div className="flex gap-4 mb-4">
+                <div className="flex items-center gap-2">
+                  <FileText className="text-green-500" size={16} />
+                  <span className="text-sm">Excel</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Folder className="text-blue-500" size={16} />
+                  <span className="text-sm">Folder</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <List className="text-indigo-500" size={16} />
+                  <span className="text-sm">List</span>
+                </div>
+              </div>
 
-          <div className="mb-4">
-            <div className="text-sm text-gray-600">
-              Current path: {selectedPath}
-            </div>
-          </div>
+              {/* Directory tree */}
+              <ScrollArea className="h-[calc(100vh-180px)] w-full rounded-md border">
+                <TreeNode node={data} isFiltered={false} />
+              </ScrollArea>
+            </>
+          ) : (
+            // Show file preview when a file is selected
+            <>
+              <div className="mb-4 flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setSelectedPath('/');
+                    onFileSelect(null);
+                  }}
+                  className="shrink-0"
+                  title="Back to directory"
+                >
+                  <ArrowLeft size={16} />
+                </Button>
+                <div className="text-sm text-gray-600">
+                  Current path: {selectedPath}
+                </div>
+              </div>
 
-          <ScrollArea className="h-[calc(100vh-200px)] w-full rounded-md border">
-            <TreeNode node={data} isFiltered={selectedPath !== '/'} />
-          </ScrollArea>
+              <div className="h-[calc(100vh-180px)]">
+                <FilePreview fileHandle={selectedFileHandle} />
+              </div>
+            </>
+          )}
         </>
       )}
 

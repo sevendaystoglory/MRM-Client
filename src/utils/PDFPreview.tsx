@@ -1,56 +1,44 @@
 import { useState, useEffect } from 'react';
-import { Document, Page, pdfjs } from 'react-pdf'; // You'll need to install react-pdf
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 interface PDFPreviewProps {
   fileHandle: FileSystemFileHandle;
 }
 
 export const PDFPreview: React.FC<PDFPreviewProps> = ({ fileHandle }) => {
-  const [url, setUrl] = useState<string | null>(null);
-  const [numPages, setNumPages] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const loadPDF = async () => {
       try {
         const file = await fileHandle.getFile();
-        setUrl(URL.createObjectURL(file));
-      } catch (err) {
-        setError('Error loading PDF');
+        const url = URL.createObjectURL(file);
+        setPdfUrl(url);
+
+        // Cleanup function
+        return () => {
+          if (url) URL.revokeObjectURL(url);
+        };
+      } catch (error) {
+        console.error('Error loading PDF:', error);
       }
     };
 
     loadPDF();
-    
-    return () => {
-      if (url) URL.revokeObjectURL(url);
-    };
   }, [fileHandle]);
 
-  if (error) {
-    return <div className="text-red-500">{error}</div>;
-  }
-
-  if (!url) {
-    return <div>Loading...</div>;
+  if (!pdfUrl) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+      </div>
+    );
   }
 
   return (
-    <div className="overflow-auto">
-      <Document
-        file={url}
-        onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-        onLoadError={(error) => setError('Error loading PDF')}
-      >
-        {Array.from(new Array(numPages), (el, index) => (
-          <Page 
-            key={`page_${index + 1}`} 
-            pageNumber={index + 1} 
-            className="mb-4"
-          />
-        ))}
-      </Document>
-    </div>
+    <iframe
+      src={pdfUrl}
+      className="w-full h-full"
+      title="PDF Preview"
+    />
   );
 };

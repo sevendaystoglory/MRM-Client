@@ -5,6 +5,7 @@ interface DirectoryNode {
   type: 'root' | 'folder' | 'excel' | 'list';
   path: string;
   children?: DirectoryNode[];
+  handle?: FileSystemHandle;
 }
 
 // Utility function to join paths
@@ -18,8 +19,9 @@ export async function generateDirectoryStructure(handle: FileSystemDirectoryHand
     const node: DirectoryNode = {
       name: handle.name,
       type: parentPath === '/' ? 'root' : 'folder',
-      path: joinPaths(parentPath, handle.name), // Use the utility function
-      children: []
+      path: joinPaths(parentPath, handle.name),
+      children: [],
+      handle: handle
     };
 
     // Iterate over the entries in the directory
@@ -30,12 +32,14 @@ export async function generateDirectoryStructure(handle: FileSystemDirectoryHand
         const childNode = await generateDirectoryStructure(childHandle, node.path);
         node.children?.push(childNode);
       } else if (entry.kind === 'file') {
-        // For files, determine the type and create a node
+        // For files, get the file handle and store it
+        const fileHandle = await handle.getFileHandle(entry.name);
         const fileType = entry.name.toLowerCase().endsWith('.xlsx') ? 'excel' : 'list';
         node.children?.push({
           name: entry.name,
           type: fileType,
-          path: joinPaths(node.path, entry.name), // Use the utility function
+          path: joinPaths(node.path, entry.name),
+          handle: fileHandle
         });
       }
     }
