@@ -104,6 +104,28 @@ export const DirectoryStructurePane: React.FC<DirectoryStructurePaneProps> = ({
       }
     };
 
+    const getSourceDigits = (nodePath: string) => {
+      // Find all sources that match this path or have this path as a parent
+      const matchingSources = sources.filter(source => 
+        source.path === nodePath || source.path.startsWith(nodePath + '/')
+      );
+
+      if (matchingSources.length === 0) return null;
+
+      // For each matching source, check if it should be shown at this level
+      const relevantDigits = matchingSources.filter(source => {
+        // Check if any expanded child should show this digit instead
+        const hasExpandedMatchingChild = node.children?.some(child => 
+          expandedNodes.has(child.path) && 
+          (child.path === source.path || source.path.startsWith(child.path + '/'))
+        );
+
+        return !hasExpandedMatchingChild;
+      }).map(source => source.digit);
+
+      return relevantDigits.length > 0 ? relevantDigits : null;
+    };
+
     return (
       <div>
         <div
@@ -127,7 +149,9 @@ export const DirectoryStructurePane: React.FC<DirectoryStructurePaneProps> = ({
           )}
           {getIcon()}
           <span className="text-sm">{node.name}</span>
-          {isSource && <span className="text-red-500">[{isSource.digit}]</span>}
+          {getSourceDigits(node.path)?.map((digit, index) => (
+            <span key={index} className="text-red-500">[{digit}]</span>
+          ))}
         </div>
         
         {isExpanded && node.children?.map((child, index) => (
