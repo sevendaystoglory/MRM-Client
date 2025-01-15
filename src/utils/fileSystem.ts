@@ -1,5 +1,3 @@
-import { join } from 'path';
-
 interface DirectoryNode {
   name: string;
   type: 'root' | 'folder' | 'excel' | 'list';

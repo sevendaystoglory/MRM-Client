@@ -35,7 +35,13 @@ const TypewriterEffect = ({ text }: { text: string }) => {
   return <span className="ml-2 text-gray-600">{displayText}</span>;
 };
 
-export const ChatBot = ({ onMessageSelect }: { onMessageSelect: (message: string) => void }) => {
+export const ChatBot = ({ 
+  onMessageSelect, 
+  directoryStructure 
+}: { 
+  onMessageSelect: (message: string) => void;
+  directoryStructure: any;
+}) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -63,7 +69,7 @@ export const ChatBot = ({ onMessageSelect }: { onMessageSelect: (message: string
     ]
   };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent, directoryStructure: any) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
@@ -88,7 +94,17 @@ export const ChatBot = ({ onMessageSelect }: { onMessageSelect: (message: string
       await new Promise(resolve => setTimeout(resolve, getRandomDelay()));
     }
 
-    const assistantMessage = { role: 'assistant', content: sampleResponse };
+    // Fetch the assistant's response from the API
+    const response = await fetch('http://13.233.69.2:9069/get_answer', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: input, directoryStructure }), // Send user input and directory structure
+    });
+
+    const data = await response.json(); // Assuming the response is in JSON format
+    const assistantMessage = { role: 'assistant', content: data.answer }; // Adjust based on actual response structure
     setMessages(prev => [...prev, assistantMessage]);
     setIsLoading(false);
     setDisplayedSteps([]);
@@ -103,7 +119,7 @@ export const ChatBot = ({ onMessageSelect }: { onMessageSelect: (message: string
         <div className="flex-1 flex flex-col items-center justify-center">
           <h1 className="text-6xl font-bold mb-2">MRM Research Bot</h1>
           <p className="text-m text-gray-500 mb-12">developed by Eigenfrequency Technologies pvt. ltd.</p>
-          <form onSubmit={handleSendMessage} className="w-2/3 max-w-2xl">
+          <form onSubmit={(e) => handleSendMessage(e, directoryStructure)} className="w-2/3 max-w-2xl">
             <div className="flex gap-2">
               <input
                 type="text"
@@ -172,7 +188,7 @@ export const ChatBot = ({ onMessageSelect }: { onMessageSelect: (message: string
   )}
             <div ref={messagesEndRef} />
           </div>
-          <form onSubmit={handleSendMessage} className="p-4 border-t">
+          <form onSubmit={(e) => handleSendMessage(e, directoryStructure)} className="p-4 border-t">
             <div className="flex gap-2">
               <input
                 type="text"

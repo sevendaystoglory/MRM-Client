@@ -104,26 +104,22 @@ export const DirectoryStructurePane: React.FC<DirectoryStructurePaneProps> = ({
       }
     };
 
-    const getSourceDigits = (nodePath: string) => {
-      // Find all sources that match this path or have this path as a parent
-      const matchingSources = sources.filter(source => 
+    const getSourceDigit = (nodePath: string) => {
+      // Find any source that matches this path or has this path as a parent
+      const matchingSource = sources.find(source => 
         source.path === nodePath || source.path.startsWith(nodePath + '/')
       );
 
-      if (matchingSources.length === 0) return null;
+      if (!matchingSource) return null;
 
-      // For each matching source, check if it should be shown at this level
-      const relevantDigits = matchingSources.filter(source => {
-        // Check if any expanded child should show this digit instead
-        const hasExpandedMatchingChild = node.children?.some(child => 
-          expandedNodes.has(child.path) && 
-          (child.path === source.path || source.path.startsWith(child.path + '/'))
-        );
+      // Check if this node has any expanded children that are also in the source path
+      const hasExpandedMatchingChild = node.children?.some(child => 
+        expandedNodes.has(child.path) && // Check if child is expanded
+        (child.path === matchingSource.path || matchingSource.path.startsWith(child.path + '/'))
+      );
 
-        return !hasExpandedMatchingChild;
-      }).map(source => source.digit);
-
-      return relevantDigits.length > 0 ? relevantDigits : null;
+      // Show digit only if there are no expanded children that match the source path
+      return hasExpandedMatchingChild ? null : matchingSource.digit;
     };
 
     return (
@@ -149,9 +145,9 @@ export const DirectoryStructurePane: React.FC<DirectoryStructurePaneProps> = ({
           )}
           {getIcon()}
           <span className="text-sm">{node.name}</span>
-          {getSourceDigits(node.path)?.map((digit, index) => (
-            <span key={index} className="text-red-500">[{digit}]</span>
-          ))}
+          {getSourceDigit(node.path) && (
+            <span className="text-red-500">[{getSourceDigit(node.path)}]</span>
+          )}
         </div>
         
         {isExpanded && node.children?.map((child, index) => (

@@ -61,7 +61,10 @@ const MRMBot = () => {
           onFileSelect={setSelectedFileHandle}
         />
       {/* Right panel ChatBot - we are passing a function as a prop to the chatbot. Done because we want to update a state in the parent component owing to a condition in the child component.*/}
-      <ChatBot onMessageSelect={handleMessageSelect}/> 
+      <ChatBot 
+        onMessageSelect={handleMessageSelect} 
+        directoryStructure={directoryData}
+      /> 
     </div>
   );
 };
