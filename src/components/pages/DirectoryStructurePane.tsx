@@ -22,6 +22,18 @@ export const DirectoryStructurePane: React.FC<DirectoryStructurePaneProps> = ({
   const [isExpanded, setIsExpanded] = useState(true);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['/']));
 
+  const logDirectoryStructure = (node) => {
+    console.log('Current Node:', node); // Log the current node
+    if (node.children) {
+      node.children.forEach(child => logDirectoryStructure(child)); // Recursively log children
+    }
+  };
+
+  // Call this function to log the entire structure
+  React.useEffect(() => {
+    logDirectoryStructure(data);
+  }, [data]);
+
   const TreeNode = ({ node, isFiltered = false }) => {
     const isExpanded = expandedNodes.has(node.path);
     const shouldShow = !isFiltered || 
@@ -117,6 +129,7 @@ export const DirectoryStructurePane: React.FC<DirectoryStructurePaneProps> = ({
                   <Button onClick={() => { 
                     onSelectFolder(); 
                     setIsOpen(false); // Close the dialog after selecting a folder
+                    setSelectedPath('/')
                   }} className="w-full">
                     Choose Local Folder
                   </Button>

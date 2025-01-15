@@ -8,22 +8,28 @@ const data: DirectoryNode = sampleData;
 
 const MRMBot = () => {
 
-    console.log("Rendering DirectoryExplorer.tsx")
-
     const [paneWidth, setPaneWidth] = useState(440);
     const [directoryData, setDirectoryData] = useState(data);
+    const [selectedPath, setSelectedPath] = useState('');
 
-    console.log('directoryData:', directoryData); // Debug log
-  
     const handleFolderSelect = async () => {
       try {
         // Open folder picker dialog
         const handle = await window.showDirectoryPicker();
         
         // Generate directory structure using the handle
-        const structure = await generateDirectoryStructure(handle);
-        console.log('New structure:', structure); // Debug log
+        const structure = await generateDirectoryStructure(handle, '/');
+        
+        // Log detailed information about the directory structure
+        console.log('Directory Structure:', structure);
+        structure.children.forEach(child => {
+          console.log(`Child Name: ${child.name}, Type: ${child.type}, Path: ${child.path}`);
+        });
+        
         setDirectoryData(structure);
+        
+        // Set the selected path to the root of the new structure
+        setSelectedPath(structure.path);
       } catch (error) {
         console.error('Error selecting folder:', error);
         // Keep existing data on error
