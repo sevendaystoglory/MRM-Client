@@ -1,9 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { sampleResponse } from '@/utils/sampleResponse';
+import { markdownComponents } from '@/components/ui/markdown-components';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+}
+
+interface LoadingStep {
+  heading: string;
+  text: string;
 }
 
 const TypewriterEffect = ({ text }: { text: string }) => {
@@ -28,12 +35,13 @@ const TypewriterEffect = ({ text }: { text: string }) => {
   return <span className="ml-2 text-gray-600">{displayText}</span>;
 };
 
-export const ChatBot = () => {
+export const ChatBot = ({ onMessageSelect }: { onMessageSelect: (message: string) => void }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
-  const [displayedSteps, setDisplayedSteps] = useState<string[]>([]);
+  const [displayedSteps, setDisplayedSteps] = useState<LoadingStep[]>([]);
+  const [selectedMessage, setSelectedMessage] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -59,7 +67,7 @@ export const ChatBot = () => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    const userMessage = { role: 'user', content: input };
+    const userMessage: Message = { role: 'user', content: input };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
@@ -80,11 +88,13 @@ export const ChatBot = () => {
       await new Promise(resolve => setTimeout(resolve, getRandomDelay()));
     }
 
-    setMessages(prev => [...prev,
-      { role: 'assistant', content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.' }
-    ]);
+    const assistantMessage = { role: 'assistant', content: sampleResponse };
+    setMessages(prev => [...prev, assistantMessage]);
     setIsLoading(false);
     setDisplayedSteps([]);
+    
+    // Pass the sources to the parent component (MRMBot)
+    return assistantMessage.content;
   };
 
   return (
@@ -120,10 +130,22 @@ export const ChatBot = () => {
           <div className="flex-1 p-4 overflow-auto flex flex-col">
             {messages.map((message, index) => (
               <div key={index} className={`mb-4 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-                <div className={`inline-block p-3 rounded-lg ${
-                  message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-white shadow'
-                }`}>
-                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                <div
+                  onClick={() => {
+                    if (message.role === 'assistant') {
+                      setSelectedMessage(index);
+                      onMessageSelect(message.content);
+                    }
+                  }}
+                  className={`inline-block p-3 rounded-lg ${
+                    message.role === 'user'
+                      ? 'bg-blue-100 text-white'
+                      : selectedMessage === index 
+                        ? 'bg-blue-100 shadow cursor-pointer' 
+                        : 'bg-white shadow cursor-pointer'
+                  }`}
+                >
+                  <ReactMarkdown components={markdownComponents}>{message.content}</ReactMarkdown>
                 </div>
               </div>
             ))}
@@ -139,7 +161,7 @@ export const ChatBot = () => {
               <div className="flex items-center gap-2 ml-2">
                 {index > 0 && <div className="w-0.5 h-4 bg-gray-300 ml-1"></div>}
                 <div className="flex items-center">
-                  <TypewriterEffect text={step.text} />
+                  <TypewriterEffect text={step.text}/>
                 </div>
               </div>
             </div>

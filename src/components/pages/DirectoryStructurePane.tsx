@@ -4,18 +4,25 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
+interface Source {
+  digit: string;
+  path: string;
+}
+
 interface DirectoryStructurePaneProps {
   data: any;
   width: number;
   onResize: (width: number) => void;
   onSelectFolder: () => void;
+  sources: Source[];
 }
 
 export const DirectoryStructurePane: React.FC<DirectoryStructurePaneProps> = ({ 
   data, 
   width,
   onResize,
-  onSelectFolder 
+  onSelectFolder,
+  sources
 }) => {
   const [selectedPath, setSelectedPath] = useState('/');
   const [isOpen, setIsOpen] = useState(false);
@@ -73,6 +80,8 @@ export const DirectoryStructurePane: React.FC<DirectoryStructurePaneProps> = ({
       }
     };
 
+    const isSource = sources.find(source => source.path === node.path);
+
     return (
       <div>
         <div
@@ -96,6 +105,7 @@ export const DirectoryStructurePane: React.FC<DirectoryStructurePaneProps> = ({
           )}
           {getIcon()}
           <span className="text-sm">{node.name}</span>
+          {isSource && <span className="text-red-500">[{isSource.digit}]</span>}
         </div>
         
         {isExpanded && node.children?.map((child, index) => (

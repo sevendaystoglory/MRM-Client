@@ -11,6 +11,7 @@ const MRMBot = () => {
     const [paneWidth, setPaneWidth] = useState(440);
     const [directoryData, setDirectoryData] = useState(data);
     const [selectedPath, setSelectedPath] = useState('');
+    const [sources, setSources] = useState<{ digit: string; path: string }[]>([]);
 
     const handleFolderSelect = async () => {
       try {
@@ -37,6 +38,15 @@ const MRMBot = () => {
       }
     };
 
+    const handleMessageSelect = (content: string) => {
+        const sourcePaths = content.match(/!\[Source-(\d)\]\(([^)]+)\)/g) || [];
+        const extractedSources = sourcePaths.map(path => {
+            const match = path.match(/!\[Source-(\d)\]\(([^)]+)\)/);
+            return match ? { digit: match[1], path: match[2] } : null;
+        }).filter(Boolean); // Filter out any null values
+        setSources(extractedSources);
+    };
+
   return (
     <div className="flex h-screen w-screen">
     {true ? (
@@ -45,6 +55,7 @@ const MRMBot = () => {
           width={paneWidth}
           onResize={setPaneWidth}
           onSelectFolder={handleFolderSelect}
+          sources={sources}
         />
       ) : (
         <div className="flex items-center justify-center w-full">
@@ -57,8 +68,8 @@ const MRMBot = () => {
         </div>
       )}
 
-    {/* Right panel ChatBot */}
-      <ChatBot />
+    {/* Right panel ChatBot - we are passing a function as a prop to the chatbot. Done because we want to update a state in the parent component owing to a condition in the child component.*/}
+      <ChatBot onMessageSelect={handleMessageSelect}/> 
     </div>
   );
 };
