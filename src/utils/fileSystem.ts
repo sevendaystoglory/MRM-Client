@@ -1,4 +1,4 @@
-interface DirectoryNode {
+export interface DirectoryNode {
   name: string;
   type: 'root' | 'folder' | 'excel' | 'list';
   path: string;
@@ -22,21 +22,22 @@ export async function generateDirectoryStructure(handle: FileSystemDirectoryHand
       handle: handle
     };
 
-    // Iterate over the entries in the directory
-    for await (const entry of handle.values()) {
+    // Double cast through unknown to satisfy TypeScript
+    for await (const entry of handle as unknown as AsyncIterable<FileSystemHandle>) {
+      const name = entry.name;
       if (entry.kind === 'directory') {
         // For directories, recursively call the function
-        const childHandle = await handle.getDirectoryHandle(entry.name);
+        const childHandle = await handle.getDirectoryHandle(name);
         const childNode = await generateDirectoryStructure(childHandle, node.path);
         node.children?.push(childNode);
       } else if (entry.kind === 'file') {
         // For files, get the file handle and store it
-        const fileHandle = await handle.getFileHandle(entry.name);
-        const fileType = entry.name.toLowerCase().endsWith('.xlsx') ? 'excel' : 'list';
+        const fileHandle = await handle.getFileHandle(name);
+        const fileType = name.toLowerCase().endsWith('.xlsx') ? 'excel' : 'list';
         node.children?.push({
-          name: entry.name,
+          name: name,
           type: fileType,
-          path: joinPaths(node.path, entry.name),
+          path: joinPaths(node.path, name),
           handle: fileHandle
         });
       }
@@ -45,6 +46,6 @@ export async function generateDirectoryStructure(handle: FileSystemDirectoryHand
     return node;
   } catch (error) {
     console.error('Error generating directory structure:', error);
-    return null;
+    throw error;
   }
 }

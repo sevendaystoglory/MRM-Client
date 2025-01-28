@@ -4,11 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FilePreview } from '@/utils/FilePreview';
-
-interface Source {
-  digit: string;
-  path: string;
-}
+import { DirectoryNode } from '../../utils/fileSystem';
+import { Source } from './MRMBot';
 
 interface DirectoryStructurePaneProps {
   data: any;
@@ -18,6 +15,12 @@ interface DirectoryStructurePaneProps {
   sources: Source[];
   selectedFileHandle?: FileSystemFileHandle | null;
   onFileSelect: (fileHandle: FileSystemFileHandle | null) => void;
+}
+
+interface TreeNodeProps {
+  node: DirectoryNode;
+  isFiltered?: boolean;
+  sources?: Source[];
 }
 
 export const DirectoryStructurePane: React.FC<DirectoryStructurePaneProps> = ({ 
@@ -34,10 +37,10 @@ export const DirectoryStructurePane: React.FC<DirectoryStructurePaneProps> = ({
   const [isExpanded, setIsExpanded] = useState(true);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['/']));
 
-  const logDirectoryStructure = (node) => {
-    console.log('Current Node:', node); // Log the current node
+  const logDirectoryStructure = (node: DirectoryNode) => {
+    console.log(node.name, node.path);
     if (node.children) {
-      node.children.forEach(child => logDirectoryStructure(child)); // Recursively log children
+      node.children.forEach((child: DirectoryNode) => logDirectoryStructure(child));
     }
   };
 
@@ -46,7 +49,7 @@ export const DirectoryStructurePane: React.FC<DirectoryStructurePaneProps> = ({
     logDirectoryStructure(data);
   }, [data]);
 
-  const TreeNode = ({ node, isFiltered = false }) => {
+  const TreeNode: React.FC<TreeNodeProps> = ({ node, isFiltered = false, sources = [] }) => {
     const isExpanded = expandedNodes.has(node.path);
     const shouldShow = !isFiltered || 
       node.path === selectedPath || 
@@ -56,7 +59,7 @@ export const DirectoryStructurePane: React.FC<DirectoryStructurePaneProps> = ({
 
     console.log('Node path:', node.path);
     
-    const pathSegments = node.path.split('/').filter(segment => segment.length > 0);
+    const pathSegments = node.path.split('/').filter((segment: string) => segment.length > 0);
     const depth = pathSegments.length;
     console.log('Path segments:', pathSegments, 'Depth:', depth);
     
@@ -85,9 +88,7 @@ export const DirectoryStructurePane: React.FC<DirectoryStructurePaneProps> = ({
       }
     };
 
-    const isSource = sources.find(source => source.path === node.path);
-
-    const handleNodeClick = async (node) => {
+    const handleNodeClick = async (node: DirectoryNode) => {
       setSelectedPath(node.path);
       
       // Only attempt to get file handle if it's a file (not a folder)
@@ -113,7 +114,7 @@ export const DirectoryStructurePane: React.FC<DirectoryStructurePaneProps> = ({
       if (!matchingSource) return null;
 
       // Check if this node has any expanded children that are also in the source path
-      const hasExpandedMatchingChild = node.children?.some(child => 
+      const hasExpandedMatchingChild = node.children?.some((child: DirectoryNode) => 
         expandedNodes.has(child.path) && // Check if child is expanded
         (child.path === matchingSource.path || matchingSource.path.startsWith(child.path + '/'))
       );
@@ -121,6 +122,8 @@ export const DirectoryStructurePane: React.FC<DirectoryStructurePaneProps> = ({
       // Show digit only if there are no expanded children that match the source path
       return hasExpandedMatchingChild ? null : matchingSource.digit;
     };
+
+    const hasChildren = node.children && node.children.length > 0;
 
     return (
       <div>
@@ -131,7 +134,7 @@ export const DirectoryStructurePane: React.FC<DirectoryStructurePaneProps> = ({
           onClick={() => handleNodeClick(node)}
           style={{ paddingLeft: `${indentation}px` }}
         >
-          {node.children?.length > 0 && (
+          {hasChildren && (
             <button onClick={(e) => {
               e.stopPropagation();
               toggleExpand();
@@ -150,8 +153,8 @@ export const DirectoryStructurePane: React.FC<DirectoryStructurePaneProps> = ({
           )}
         </div>
         
-        {isExpanded && node.children?.map((child, index) => (
-          <TreeNode key={child.path} node={child} isFiltered={isFiltered} />
+        {isExpanded && node.children?.map((child: DirectoryNode) => (
+          <TreeNode key={child.path} node={child} isFiltered={isFiltered} sources={sources} />
         ))}
       </div>
     );
@@ -225,7 +228,7 @@ export const DirectoryStructurePane: React.FC<DirectoryStructurePaneProps> = ({
 
               {/* Directory tree */}
               <ScrollArea className="h-[calc(100vh-180px)] w-full rounded-md border">
-                <TreeNode node={data} isFiltered={false} />
+                <TreeNode node={data} isFiltered={false} sources={sources} />
               </ScrollArea>
             </>
           ) : (

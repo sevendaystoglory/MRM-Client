@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { sampleResponse } from '@/utils/sampleResponse';
 import { markdownComponents } from '@/components/ui/markdown-components';
 
 interface Message {
@@ -45,7 +44,7 @@ export const ChatBot = ({
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState(0);
+  // const [loadingStep, setLoadingStep] = useState(0);
   const [displayedSteps, setDisplayedSteps] = useState<LoadingStep[]>([]);
   const [selectedMessage, setSelectedMessage] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -104,7 +103,10 @@ export const ChatBot = ({
     });
 
     const data = await response.json(); // Assuming the response is in JSON format
-    const assistantMessage = { role: 'assistant', content: data.answer }; // Adjust based on actual response structure
+    const assistantMessage: Message = {
+      role: 'assistant',
+      content: data.answer
+    }; // Adjust based on actual response structure
     setMessages(prev => [...prev, assistantMessage]);
     setIsLoading(false);
     setDisplayedSteps([]);
@@ -117,15 +119,15 @@ export const ChatBot = ({
     <div className="flex-1 flex flex-col bg-gray-50">
       {messages.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center">
-          <h1 className="text-6xl font-bold mb-2">MRM Research Bot</h1>
-          <p className="text-m text-gray-500 mb-12">developed by Eigenfrequency Technologies pvt. ltd.</p>
+          <h1 className="text-6xl font-bold mb-2">MRM Research Agent</h1>
+          <p className="text-m text-gray-500 mb-12">developed by NeuraForge Technologies</p>
           <form onSubmit={(e) => handleSendMessage(e, directoryStructure)} className="w-2/3 max-w-2xl">
             <div className="flex gap-2">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                className="flex-1 p-2 border rounded shadow-sm"
+                className="flex-1 p-2 bg-white border rounded shadow-sm"
                 placeholder="Type your message..."
                 disabled={isLoading}
               />
@@ -194,7 +196,7 @@ export const ChatBot = ({
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                className="flex-1 p-2 border rounded"
+                className="flex-1 p-2 border rounded bg-white"
                 placeholder="Type your message..."
                 disabled={isLoading}
               />

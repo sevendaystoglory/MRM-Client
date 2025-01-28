@@ -5,13 +5,34 @@ import type { DirectoryNode } from '@/utils/fileSystem';
 import sampleData from '@/utils/sampleDirectory.json';
 import { ChatBot } from '@/components/pages/ChatBot';
 
-const data: DirectoryNode = sampleData;
+declare global {
+  interface Window {
+    showDirectoryPicker(): Promise<FileSystemDirectoryHandle>;
+  }
+}
+
+// Define the Source type if not already defined
+export interface Source {
+  digit: string;
+  path: string;
+}
+
+// Helper function to convert sample data to correct type
+function convertToDirectoryNode(data: any): DirectoryNode {
+  return {
+    ...data,
+    type: data.type as 'root' | 'folder' | 'excel' | 'list',
+    children: data.children?.map((child: any) => convertToDirectoryNode(child))
+  };
+}
+
+// Convert sample data to match DirectoryNode type
+const data: DirectoryNode = convertToDirectoryNode(sampleData);
 
 const MRMBot = () => {
 
     const [paneWidth, setPaneWidth] = useState(440);
     const [directoryData, setDirectoryData] = useState(data);
-    const [selectedPath, setSelectedPath] = useState('');
     const [sources, setSources] = useState<{ digit: string; path: string }[]>([]);
     const [selectedFileHandle, setSelectedFileHandle] = useState<FileSystemFileHandle | null>(null);
 
@@ -25,14 +46,13 @@ const MRMBot = () => {
         
         // Log detailed information about the directory structure
         console.log('Directory Structure:', structure);
-        structure.children.forEach(child => {
-          console.log(`Child Name: ${child.name}, Type: ${child.type}, Path: ${child.path}`);
-        });
+        if (structure.children) {
+          structure.children.forEach(child => {
+            console.log(`Child Name: ${child.name}, Type: ${child.type}, Path: ${child.path}`);
+          });
+        }
         
         setDirectoryData(structure);
-        
-        // Set the selected path to the root of the new structure
-        setSelectedPath(structure.path);
       } catch (error) {
         console.error('Error selecting folder:', error);
         // Keep existing data on error
@@ -45,7 +65,7 @@ const MRMBot = () => {
         const extractedSources = sourcePaths.map(path => {
             const match = path.match(/!\[Source-(\d)\]\(([^)]+)\)/);
             return match ? { digit: match[1], path: match[2] } : null;
-        }).filter(Boolean); // Filter out any null values
+        }).filter((source): source is { digit: string; path: string } => source !== null);
         setSources(extractedSources);
     };
 

@@ -21,7 +21,8 @@ export const CSVPreview: React.FC<CSVPreviewProps> = ({ fileHandle }) => {
             setData(results.data as string[][]);
             setLoading(false);
           },
-          error: (error) => {
+          error: (error: Error) => {
+            console.error('Error reading CSV:', error);
             setError(error.message);
             setLoading(false);
           }

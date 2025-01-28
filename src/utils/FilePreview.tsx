@@ -3,7 +3,7 @@ import { CSVPreview } from './CSVPreview'
 import { PDFPreview } from './PDFPreview';
 
 interface FilePreviewProps {
-  fileHandle: FileSystemFileHandle | null;
+  fileHandle: FileSystemFileHandle | null | undefined;
 }
 
 export const FilePreview: React.FC<FilePreviewProps> = ({ fileHandle }) => {
